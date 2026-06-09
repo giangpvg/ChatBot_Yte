@@ -1,0 +1,24 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environment variables & credentials
+.env
+src/.env
+
+# Large model checkpoints
+src/checkpoints/
+*.pth
+
+# Local databases
+src/rag/chroma_db/
+
+# Streamlit config & cache
+.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db
