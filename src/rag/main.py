@@ -119,10 +119,10 @@ def build_prompt(query, intent, entity_words, retrieved_docs):
 Bạn là một Trợ lý Y tế AI chuyên nghiệp. Nhiệm vụ của bạn là trả lời câu hỏi y tế của người dùng dựa HOÀN TOÀN vào các tài liệu y khoa chính thức được cung cấp bên dưới.
 
 ## NGUYÊN TẮC QUAN TRỌNG:
-- CHỈ sử dụng thông tin có trong TÀI LIỆU Y TẾ được cung cấp. KHÔNG tự bịa đặt.
-- Nếu tài liệu tham khảo HOÀN TOÀN không chứa thông tin để trả lời câu hỏi, hãy trả lời duy nhất câu sau và không giải thích thêm: "Tài liệu hiện có chưa đề cập đến vấn đề này, vui lòng tham khảo ý kiến bác sĩ."
-- Nếu tài liệu có chứa thông tin nhưng không đầy đủ, hãy trả lời phần thông tin có sẵn trong tài liệu, TUYỆT ĐỐI không tự ý vẽ thêm hoặc bổ sung các chi tiết ngoài tài liệu (như thuốc, phương pháp cấp cứu) từ kiến thức ngoại cảnh của bạn.
-- Luôn kết thúc bằng lời khuyên người dùng đến gặp bác sĩ/cơ sở y tế để được tư vấn trực tiếp.
+- CHỈ sử dụng thông tin có trong TÀI LIỆU Y TẾ được cung cấp. KHÔNG tự bịa đặt kiến thức bên ngoài.
+- NẾU tài liệu tham khảo CÓ CHỨA thông tin để trả lời (dù chỉ một phần): Hãy tổng hợp và trả lời dựa trên tài liệu. KHÔNG ĐƯỢC chèn thêm câu "Tài liệu hiện có chưa đề cập...".
+- NẾU tài liệu tham khảo HOÀN TOÀN KHÔNG chứa bất kỳ thông tin nào liên quan đến câu hỏi: Hãy trả lời DUY NHẤT một câu: "Tài liệu hiện có chưa đề cập đến vấn đề này, vui lòng tham khảo ý kiến bác sĩ." và KHÔNG giải thích gì thêm.
+- Luôn kết thúc câu trả lời bằng lời khuyên đi khám bác sĩ (trừ trường hợp dùng câu từ chối ở trên).
 - Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc (dùng gạch đầu dòng nếu cần).
 
 ## PHÂN TÍCH CÂU HỎI:
@@ -148,7 +148,7 @@ def generate_answer(openai_client, prompt):
             messages=[
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3
+            temperature=0
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -193,12 +193,14 @@ def main():
         else:
             print(f"\n[Phân tích] Intent: {intent} | Không có thực thể y tế, dùng toàn bộ câu.")
 
-        # Bước 2: Sử dụng câu truy vấn ở dạng chữ thường (SBERT nhạy cảm với chữ hoa/chữ thường, giúp khớp tốt hơn)
+        # Bước 2: Sử dụng câu truy vấn ở dạng chữ thường và tăng cường (Query Expansion)
         search_query = query.strip().lower()
+        if "là gì" in search_query or "thế nào là" in search_query:
+            search_query += " đại cương định nghĩa khái niệm"
 
         # Bước 3: RAG Retrieval
         print(" Đang tra cứu tài liệu y khoa...")
-        retrieved_docs = vector_db.similarity_search(search_query, k=3)
+        retrieved_docs = vector_db.similarity_search(search_query, k=10)
 
         # Bước 4: Xây dựng Prompt và gọi OpenAI
         print("Đang tổng hợp câu trả lời với LLM...")

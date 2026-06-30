@@ -4,6 +4,7 @@ from model_intent import JointPhoBERTModel
 from preprocess import LabelEncoder
 import json
 import warnings
+from underthesea import word_tokenize
 warnings.filterwarnings('ignore')
 
 def load_encoder(train_path):
@@ -16,7 +17,8 @@ def load_encoder(train_path):
 def predict(sentence, model, tokenizer, encoder, device, max_len=128):
     model.eval()
     
-    # Giả định câu đầu vào đã được tách từ (Word Segmentation) bằng dấu '_'
+    # Sử dụng underthesea để tách từ (Word Segmentation) với dấu '_'
+    sentence = word_tokenize(sentence, format="text")
     words = sentence.split()
     if not words:
         return "UNKNOWN", []

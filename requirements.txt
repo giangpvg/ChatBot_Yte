@@ -12,3 +12,4 @@ pypdf
 openai
 python-dotenv
 streamlit
+underthesea

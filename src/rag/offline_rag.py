@@ -1,7 +1,7 @@
 import os
 import glob
 import torch
-from langchain_community.document_loaders import PyPDFLoader, UnstructuredWordDocumentLoader, TextLoader
+from langchain_community.document_loaders import PyMuPDFLoader, UnstructuredWordDocumentLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 # pyrefly: ignore [missing-import]
@@ -36,7 +36,7 @@ def load_documents(data_dir):
     for pdf_file in pdf_files:
         print(f" -> Đang đọc file PDF: {os.path.basename(pdf_file)}...")
         try:
-            loader = PyPDFLoader(pdf_file)
+            loader = PyMuPDFLoader(pdf_file)
             loaded_docs = loader.load()
             for doc in loaded_docs:
                 doc.page_content = clean_vietnamese_text(doc.page_content)

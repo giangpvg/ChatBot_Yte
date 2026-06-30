@@ -245,9 +245,12 @@ if query:
             retrieved_docs = []
             retrieved_docs_serializable = []
             if vector_db is not None:
-                # Dùng phiên bản chữ thường để tìm kiếm khớp tốt hơn với SBERT
+                # Dùng phiên bản chữ thường và tăng cường (Query Expansion)
                 search_query = query.strip().lower()
-                retrieved_docs = vector_db.similarity_search(search_query, k=3)
+                if "là gì" in search_query or "thế nào là" in search_query:
+                    search_query += " đại cương định nghĩa khái niệm"
+                
+                retrieved_docs = vector_db.similarity_search(search_query, k=5)
                 for doc in retrieved_docs:
                     retrieved_docs_serializable.append({
                         "source": doc.metadata.get("source", "Tài liệu y tế"),
