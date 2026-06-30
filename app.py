@@ -9,7 +9,7 @@ sys.path.append(os.path.join(ROOT_DIR, 'src'))
 sys.path.append(os.path.join(ROOT_DIR, 'src', 'NLU'))
 sys.path.append(os.path.join(ROOT_DIR, 'src', 'rag'))
 
-from predict import predict, load_encoder
+from rag.predict import predict, load_encoder
 from model_intent import JointPhoBERTModel
 from main import build_prompt, generate_answer, setup_openai, load_env_vars
 from langchain_huggingface import HuggingFaceEmbeddings

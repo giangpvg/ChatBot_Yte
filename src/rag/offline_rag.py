@@ -10,6 +10,13 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
+def clean_vietnamese_text(text: str) -> str:
+    if not text:
+        return text
+    # Sửa lỗi font chữ cực kỳ phổ biến trong các PDF tiếng Việt cũ (dùng ký tự ƣ thay cho ư)
+    text = text.replace('ƣ', 'ư').replace('Ƣ', 'Ư')
+    return text
+
 def load_documents(data_dir):
     documents = []
     
@@ -30,7 +37,10 @@ def load_documents(data_dir):
         print(f" -> Đang đọc file PDF: {os.path.basename(pdf_file)}...")
         try:
             loader = PyPDFLoader(pdf_file)
-            documents.extend(loader.load())
+            loaded_docs = loader.load()
+            for doc in loaded_docs:
+                doc.page_content = clean_vietnamese_text(doc.page_content)
+            documents.extend(loaded_docs)
         except Exception as e:
             print(f"Lỗi khi đọc file {pdf_file}: {e}")
 

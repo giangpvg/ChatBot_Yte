@@ -115,7 +115,8 @@ def build_prompt(query, intent, entity_words, retrieved_docs):
     }
     intent_instruction = intent_instruction_map.get(intent, "Hãy trả lời một cách toàn diện.")
 
-    prompt = f"""Bạn là một Trợ lý Y tế AI chuyên nghiệp. Nhiệm vụ của bạn là trả lời câu hỏi y tế của người dùng dựa HOÀN TOÀN vào các tài liệu y khoa chính thức được cung cấp bên dưới.
+    prompt = f"""
+Bạn là một Trợ lý Y tế AI chuyên nghiệp. Nhiệm vụ của bạn là trả lời câu hỏi y tế của người dùng dựa HOÀN TOÀN vào các tài liệu y khoa chính thức được cung cấp bên dưới.
 
 ## NGUYÊN TẮC QUAN TRỌNG:
 - CHỈ sử dụng thông tin có trong TÀI LIỆU Y TẾ được cung cấp. KHÔNG tự bịa đặt.

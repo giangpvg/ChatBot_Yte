@@ -63,6 +63,13 @@ def convert_docx_to_markdown(docx_path, output_md_path):
     print(f"      ✅ Đã lưu file Markdown tại: {output_md_path}")
 
 # pdf utils
+def clean_vietnamese_text(text: str) -> str:
+    if not text:
+        return text
+    # Sửa lỗi font chữ cực kỳ phổ biến trong các PDF tiếng Việt cũ (dùng ký tự ƣ thay cho ư)
+    text = text.replace('ƣ', 'ư').replace('Ƣ', 'Ư')
+    return text
+
 def is_char_in_bbox(char, bbox):
     """Kiểm tra xem một ký tự có nằm trong bounding box của bảng không."""
     x0, top, x1, bottom = bbox
@@ -85,6 +92,7 @@ def pdf_table_to_markdown(table_data):
         cleaned_row = []
         for cell in row:
             val = str(cell or "").strip().replace('\n', ' ').replace('|', '\\|')
+            val = clean_vietnamese_text(val)
             cleaned_row.append(val)
         cleaned_rows.append(cleaned_row)
         
@@ -112,6 +120,7 @@ def convert_pdf_to_markdown(pdf_path, output_md_path):
                 
             filtered_page = page.filter(char_filter)
             plain_text = filtered_page.extract_text() or ""
+            plain_text = clean_vietnamese_text(plain_text)
             
             md_content.append(f"<!-- Page {page_idx + 1} -->\n" + plain_text.strip() + "\n")
             
