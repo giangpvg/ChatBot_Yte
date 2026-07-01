@@ -5,6 +5,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from transformers import AutoTokenizer
 from openai import OpenAI
+from huggingface_hub import InferenceClient
 import os as _os
 from pathlib import Path
 import warnings
@@ -96,6 +97,10 @@ def setup_openai(api_key, api_base):
     )
     return client
 
+def setup_hf_client(hf_token):
+    """Khởi tạo Hugging Face InferenceClient."""
+    return InferenceClient(token=hf_token)
+
 def build_prompt(query, intent, entity_words, retrieved_docs):
     """Xây dựng Prompt chuẩn y tế cho OpenAI LLM."""
 
@@ -140,19 +145,35 @@ Bạn là một Trợ lý Y tế AI chuyên nghiệp. Nhiệm vụ của bạn l
 
     return prompt
 
-def generate_answer(openai_client, prompt):
-    """Gọi OpenAI API (Azure AI Inference / GitHub Models) để sinh câu trả lời."""
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini", # Model mặc định trên GitHub Models
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Lỗi khi gọi OpenAI API: {e}"
+def generate_answer(openai_client, hf_client, prompt):
+    """Gọi OpenAI API trước, nếu lỗi thì chuyển sang Hugging Face (Qwen)."""
+    if openai_client:
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Lỗi OpenAI: {e}. Đang chuyển sang Hugging Face...")
+            
+    if hf_client:
+        try:
+            messages = [{"role": "user", "content": prompt}]
+            response = hf_client.chat_completion(
+                model="Qwen/Qwen2.5-72B-Instruct",
+                messages=messages,
+                max_tokens=1024,
+                temperature=0.1
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Lỗi cả 2 API. Lỗi Hugging Face: {e}"
+            
+    return "Không có kết nối API nào khả dụng."
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -163,11 +184,14 @@ def main():
     print("2. Đang kết nối tới Vector Database (Chroma)...")
     vector_db = load_vector_db(device)
 
-    print("3. Đang kết nối OpenAI-compatible API...")
-    if not OPENAI_API_KEY:
-        print("Không tìm thấy OPENAI_API_KEY!")
+    print("3. Đang kết nối API...")
+    HF_TOKEN = ENV_VARS.get("HF_TOKEN")
+    openai_client = setup_openai(OPENAI_API_KEY, OPENAI_API_BASE) if OPENAI_API_KEY else None
+    hf_client = setup_hf_client(HF_TOKEN) if HF_TOKEN else None
+
+    if not openai_client and not hf_client:
+        print("Không tìm thấy OPENAI_API_KEY hay HF_TOKEN!")
         return
-    openai_client = setup_openai(OPENAI_API_KEY, OPENAI_API_BASE)
 
     print("\n" + "="*60)
     print("CHATBOT Y TẾ - Powered by PhoBERT + RAG + OpenAI LLM")
@@ -203,7 +227,7 @@ def main():
         # Bước 4: Xây dựng Prompt và gọi OpenAI
         print("Đang tổng hợp câu trả lời với LLM...")
         prompt = build_prompt(query, intent, entity_words, retrieved_docs)
-        answer = generate_answer(openai_client, prompt)
+        answer = generate_answer(openai_client, hf_client, prompt)
 
         # Bước 5: In câu trả lời cuối cùng
         print("\n" + "─"*60)

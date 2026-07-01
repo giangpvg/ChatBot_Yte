@@ -11,7 +11,7 @@ sys.path.append(os.path.join(ROOT_DIR, 'src', 'rag'))
 
 from rag.predict import predict, load_encoder
 from model_intent import JointPhoBERTModel
-from main import build_prompt, generate_answer, setup_openai, load_env_vars
+from main import build_prompt, generate_answer, setup_openai, setup_hf_client, load_env_vars
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
@@ -126,6 +126,7 @@ vector_db = load_vector_store()
 env_vars = load_env_vars(os.path.join(ROOT_DIR, "src", ".env"))
 api_key_input = os.environ.get("OPENAI_API_KEY", env_vars.get("OPENAI_API_KEY", ""))
 api_base_input = os.environ.get("OPENAI_API_BASE", env_vars.get("OPENAI_API_BASE", "https://models.inference.ai.azure.com"))
+hf_token_input = os.environ.get("HF_TOKEN", env_vars.get("HF_TOKEN", ""))
 
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/809/809957.png", width=80)
@@ -236,12 +237,13 @@ if query:
                     })
             
             # --- Bước 3: Sinh câu trả lời với LLM ---
-            if not api_key_input:
-                answer = "Không tìm thấy API Key. Vui lòng thiết lập biến môi trường OPENAI_API_KEY để kích hoạt trả lời từ mô hình ngôn ngữ lớn."
+            if not api_key_input and not hf_token_input:
+                answer = "Không tìm thấy API Key nào. Vui lòng thiết lập biến môi trường OPENAI_API_KEY hoặc HF_TOKEN để kích hoạt trả lời từ AI."
             else:
-                openai_client = setup_openai(api_key_input, api_base_input)
+                openai_client = setup_openai(api_key_input, api_base_input) if api_key_input else None
+                hf_client = setup_hf_client(hf_token_input) if hf_token_input else None
                 prompt = build_prompt(query, intent, entity_words, retrieved_docs)
-                answer = generate_answer(openai_client, prompt)
+                answer = generate_answer(openai_client, hf_client, prompt)
             
             # Hiển thị câu trả lời
             st.write(answer)
