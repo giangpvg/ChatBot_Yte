@@ -23,7 +23,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS cho phong cách Premium Medical
 st.markdown("""
 <style>
     /* Gradient background cho tiêu đề */
@@ -180,7 +179,6 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
         
-        # Nếu có thông tin phân tích đi kèm (NLU / Retrieval), hiển thị dưới dạng expander
         if "analysis" in message:
             analysis = message["analysis"]
             with st.expander("🔍 Chi tiết phân tích hệ thống"):
@@ -225,14 +223,11 @@ if query:
         st.write(query)
     st.session_state.messages.append({"role": "user", "content": query})
     
-    # Xử lý phản hồi từ chatbot
     with st.chat_message("assistant"):
         with st.spinner("Đang phân tích câu hỏi và tra cứu y văn..."):
             
             # --- Bước 1: Phân tích NLU (Intent + NER) ---
             if nlu_model is not None:
-                # Tiền xử lý từ ghép
-                # Model predict mong đợi các từ ghép được tách từ bằng dấu gạch dưới "_"
                 intent, entities = predict(query, nlu_model, tokenizer, encoder, device)
                 entity_words = [word.replace('_', ' ') for word, tag in entities if tag != "O"]
                 entities_filtered = [(word.replace('_', ' '), tag) for word, tag in entities if tag != "O"]

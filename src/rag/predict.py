@@ -87,7 +87,6 @@ if __name__ == "__main__":
     
     print("\n" + "="*50)
     print("MÔ HÌNH ĐÃ SẴN SÀNG!")
-    print("Lưu ý: Từ ghép tiếng Việt cần nối bằng dấu '_' (VD: đau_đầu, bệnh_viện)")
     print("="*50 + "\n")
     
     while True:

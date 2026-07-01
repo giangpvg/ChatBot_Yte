@@ -165,10 +165,8 @@ def main():
 
     print("3. Đang kết nối OpenAI-compatible API...")
     if not OPENAI_API_KEY:
-        print("CẢNH BÁO: Không tìm thấy OPENAI_API_KEY!")
-        print("   Định dạng: OPENAI_API_KEY = YOUR_KEY_HERE")
+        print("Không tìm thấy OPENAI_API_KEY!")
         return
-    print(f"Đã đọc API Key từ file .env (****{OPENAI_API_KEY[-6:]})")
     openai_client = setup_openai(OPENAI_API_KEY, OPENAI_API_BASE)
 
     print("\n" + "="*60)

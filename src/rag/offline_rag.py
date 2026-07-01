@@ -13,7 +13,6 @@ warnings.filterwarnings('ignore')
 def clean_vietnamese_text(text: str) -> str:
     if not text:
         return text
-    # Sửa lỗi font chữ cực kỳ phổ biến trong các PDF tiếng Việt cũ (dùng ký tự ƣ thay cho ư)
     text = text.replace('ƣ', 'ư').replace('Ƣ', 'Ư')
     return text
 
@@ -66,7 +65,6 @@ def build_vector_db():
         print(f"Lỗi: Không tìm thấy thư mục {data_dir}")
         return
 
-    # BƯỚC 1: Đọc tài liệu
     print("BƯỚC 1: Đang đọc tài liệu từ thư mục...")
     docs = load_documents(data_dir)
     
@@ -76,17 +74,27 @@ def build_vector_db():
         
     print(f"   => Tổng số trang/đoạn tài liệu gốc thu được: {len(docs)}")
     
-    # BƯỚC 2: Chunking (Phân nhỏ tài liệu)
     print("\nBƯỚC 2: Phân mảnh tài liệu (Chunking)...")
+    MARKDOWN_SEPARATORS = [
+        "\n#{1,6} ",
+        "```\n",
+        "\n\\*\\*\\*+\n",
+        "\n---+\n",
+        "\n___+\n",
+        "\n\n",
+        "\n",
+        " ",
+        ""
+    ]
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
-        separators=["\n\n", "\n", ".", " ", ""]
+        separators=MARKDOWN_SEPARATORS,
+        is_separator_regex=True
     )
     chunks = text_splitter.split_documents(docs)
     print(f"   => Tổng số chunks tạo ra: {len(chunks)}")
     
-    # BƯỚC 3: Tải Embedding Model
     print("\nBƯỚC 3: Tải Embedding Model (keepitreal/vietnamese-sbert)...")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"   => Đang sử dụng thiết bị: {device.upper()}")
@@ -96,7 +104,6 @@ def build_vector_db():
         model_kwargs={'device': device}
     )
     
-    # BƯỚC 4: Xây dựng Vector DB
     print("\nBƯỚC 4: Tính toán Vector và lưu vào ChromaDB (Có thể mất vài phút)...")
     vector_db = Chroma.from_documents(
         documents=chunks,
@@ -105,7 +112,6 @@ def build_vector_db():
     )
     
     print(f"\n THÀNH CÔNG! Vector Database đã được lưu thành công tại: {persist_dir}")
-    print("Hệ thống RAG đã sẵn sàng cho bước truy xuất (Retrieval)!")
 
 if __name__ == "__main__":
     build_vector_db()
