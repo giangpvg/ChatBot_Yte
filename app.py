@@ -122,35 +122,18 @@ def load_vector_store():
 nlu_model, tokenizer, encoder, device = load_nlu_resources()
 vector_db = load_vector_store()
 
-# Đọc API Key mặc định từ .env
+# Đọc API Key mặc định từ hệ thống hoặc .env
 env_vars = load_env_vars(os.path.join(ROOT_DIR, "src", ".env"))
-default_api_key = env_vars.get("OPENAI_API_KEY", "")
-default_api_base = env_vars.get("OPENAI_API_BASE", "https://models.inference.ai.azure.com")
+api_key_input = os.environ.get("OPENAI_API_KEY", env_vars.get("OPENAI_API_KEY", ""))
+api_base_input = os.environ.get("OPENAI_API_BASE", env_vars.get("OPENAI_API_BASE", "https://models.inference.ai.azure.com"))
 
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/809/809957.png", width=80)
-    st.title("Cấu hình hệ thống")
     
-    api_key_input = st.text_input(
-        "OpenAI / Azure Inference API Key",
-        value=default_api_key,
-        type="password",
-        help="Khóa API để gọi mô hình ngôn ngữ lớn (LLM). Mặc định đọc từ file src/.env"
-    )
-    
-    api_base_input = st.text_input(
-        "API Base URL",
-        value=default_api_base,
-        help="Endpoint API. Mặc định sử dụng GitHub Models / Azure AI Inference."
-    )
-    
-    st.divider()
     st.markdown("### Câu hỏi gợi ý")
     
     sample_queries = [
         "Bé bị sốt cao co giật phải làm sao?",
-        "Nguyên nhân gây tăng huyết áp là gì?",
-        "Cách phòng ngừa tăng huyết áp thế nào?",
         "Triệu chứng khi trẻ bị viêm phổi?",
         "Khi nào cần đưa trẻ bị tiêu chảy đi khám ngay?"
     ]
@@ -216,7 +199,7 @@ if "suggested_query" in st.session_state and st.session_state.suggested_query:
     query = st.session_state.suggested_query
     st.session_state.suggested_query = None # Reset
 else:
-    query = st.chat_input("Nhập câu hỏi y tế của bạn tại đây (Ví dụ: bé_bị sốt_cao phải làm_sao)...")
+    query = st.chat_input("Nhập câu hỏi y tế của bạn tại đây...")
 
 if query:
     with st.chat_message("user"):
@@ -254,7 +237,7 @@ if query:
             
             # --- Bước 3: Sinh câu trả lời với LLM ---
             if not api_key_input:
-                answer = "Không tìm thấy API Key. Vui lòng nhập OpenAI / Azure Inference API Key tại bảng cấu hình ở Sidebar bên trái để kích hoạt trả lời từ mô hình ngôn ngữ lớn."
+                answer = "Không tìm thấy API Key. Vui lòng thiết lập biến môi trường OPENAI_API_KEY để kích hoạt trả lời từ mô hình ngôn ngữ lớn."
             else:
                 openai_client = setup_openai(api_key_input, api_base_input)
                 prompt = build_prompt(query, intent, entity_words, retrieved_docs)

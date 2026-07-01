@@ -10,11 +10,11 @@ __pycache__/
 src/.env
 
 # Large model checkpoints
-src/checkpoints/
-*.pth
+# src/checkpoints/
+# *.pth
 
 # Local databases
-src/rag/chroma_db/
+# src/rag/chroma_db/
 
 # Streamlit config & cache
 .streamlit/
@@ -22,3 +22,6 @@ src/rag/chroma_db/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Test files
+src/rag/test_markdown_conversion.py
