@@ -17,7 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy toàn bộ mã nguồn vào container
 COPY . .
 
-# Hugging Face Spaces mặc định sử dụng port 7860
 EXPOSE 7860
 
 # Chạy ứng dụng Streamlit
