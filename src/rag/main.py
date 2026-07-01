@@ -164,7 +164,7 @@ def generate_answer(openai_client, hf_client, prompt):
         try:
             messages = [{"role": "user", "content": prompt}]
             response = hf_client.chat_completion(
-                model="Qwen/Qwen2.5-72B-Instruct",
+                model="Qwen/Qwen2.5-7B-Instruct",
                 messages=messages,
                 max_tokens=1024,
                 temperature=0.1
