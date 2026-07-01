@@ -1,3 +1,12 @@
+---
+title: ChatBot Yte
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # ChatBot Y tế (Medical Chatbot) - PhoBERT + RAG + LLM
 
 Dự án này xây dựng một **Trợ lý Y tế AI (Medical Chatbot)** kết hợp giữa mô hình hiểu ngôn ngữ tự nhiên (NLU) và kỹ thuật tạo văn bản tăng cường tra cứu (RAG - Retrieval-Augmented Generation). Chatbot có khả năng hiểu ý định người dùng, nhận diện thực thể y khoa, tra cứu tài liệu hướng dẫn y tế chính thống, và sinh câu trả lời chuẩn xác nhất nhờ LLM.
