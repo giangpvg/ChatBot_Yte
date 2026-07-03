@@ -9,14 +9,18 @@ from huggingface_hub import InferenceClient
 import os as _os
 from pathlib import Path
 import warnings
+import pickle
+import sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(current_dir))
 
 sys.path.append(os.path.join(project_root, 'src', 'NLU'))
+sys.path.append(os.path.join(project_root, 'src', 'rag'))
 
 from predict import predict, load_encoder
 from model_intent import JointPhoBERTModel
+from tokenizer import vi_tokenizer
 
 warnings.filterwarnings('ignore')
 
@@ -88,6 +92,38 @@ def load_vector_db(device):
     )
     vector_db = Chroma(persist_directory=persist_dir, embedding_function=embeddings)
     return vector_db
+
+def load_bm25_retriever():
+    persist_dir = os.path.join(project_root, "src", "rag", "chroma_db")
+    bm25_path = os.path.join(persist_dir, "bm25_retriever.pkl")
+
+    if not os.path.exists(bm25_path):
+        colab_persist_dir = "/content/ChatBot_Yte/src/rag/chroma_db"
+        bm25_path = os.path.join(colab_persist_dir, "bm25_retriever.pkl")
+
+    if os.path.exists(bm25_path):
+        try:
+            with open(bm25_path, 'rb') as f:
+                return pickle.load(f)
+        except Exception as e:
+            print(f"Lỗi khi load BM25: {e}")
+    return None
+
+def reciprocal_rank_fusion(vector_docs, bm25_docs, k=60, top_n=10):
+    rrf_scores = {}
+    
+    def add_score(docs):
+        for rank, doc in enumerate(docs):
+            doc_id = doc.page_content
+            if doc_id not in rrf_scores:
+                rrf_scores[doc_id] = {'doc': doc, 'score': 0.0}
+            rrf_scores[doc_id]['score'] += 1.0 / (rank + 1 + k)
+            
+    add_score(vector_docs)
+    add_score(bm25_docs)
+    
+    sorted_docs = sorted(rrf_scores.values(), key=lambda x: x['score'], reverse=True)
+    return [item['doc'] for item in sorted_docs[:top_n]]
 
 def setup_openai(api_key, api_base):
     """Khởi tạo OpenAI client tương thích với Azure AI Inference."""
@@ -184,8 +220,9 @@ def main():
     print("1. Đang khởi tạo NLU Model (PhoBERT)...")
     nlu_model, tokenizer, encoder = load_nlu_model(device)
 
-    print("2. Đang kết nối tới Vector Database (Chroma)...")
+    print("2. Đang kết nối tới Vector Database (Chroma) và BM25...")
     vector_db = load_vector_db(device)
+    bm25_retriever = load_bm25_retriever()
 
     print("3. Đang kết nối API...")
     HF_TOKEN = ENV_VARS.get("HF_TOKEN")
@@ -223,9 +260,20 @@ def main():
         if "là gì" in search_query or "thế nào là" in search_query:
             search_query += " đại cương định nghĩa khái niệm"
 
-        # Bước 3: RAG Retrieval
-        print(" Đang tra cứu tài liệu y khoa...")
-        retrieved_docs = vector_db.similarity_search(search_query, k=10)
+        # Bước 3: RAG Retrieval (Hybrid Search)
+        print(" Đang tra cứu tài liệu y khoa (Hybrid Search)...")
+        vector_docs = vector_db.similarity_search(search_query, k=10)
+        
+        bm25_docs = []
+        if bm25_retriever:
+            bm25_retriever.k = 10
+            if entity_words:
+                bm25_query = " ".join(entity_words)
+                bm25_docs = bm25_retriever.invoke(bm25_query)
+            else:
+                bm25_docs = bm25_retriever.invoke(search_query)
+
+        retrieved_docs = reciprocal_rank_fusion(vector_docs, bm25_docs, top_n=10)
 
         # Bước 4: Xây dựng Prompt và gọi OpenAI
         print("Đang tổng hợp câu trả lời với LLM...")

@@ -11,7 +11,7 @@ sys.path.append(os.path.join(ROOT_DIR, 'src', 'rag'))
 
 from rag.predict import predict, load_encoder
 from model_intent import JointPhoBERTModel
-from main import build_prompt, generate_answer, setup_openai, setup_hf_client, load_env_vars
+from main import build_prompt, generate_answer, setup_openai, setup_hf_client, load_env_vars, load_bm25_retriever, reciprocal_rank_fusion
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
@@ -118,9 +118,14 @@ def load_vector_store():
     vector_db = Chroma(persist_directory=persist_dir, embedding_function=embeddings)
     return vector_db
 
+@st.cache_resource
+def load_bm25_store():
+    return load_bm25_retriever()
+
 # Khởi tạo mô hình và DB
 nlu_model, tokenizer, encoder, device = load_nlu_resources()
 vector_db = load_vector_store()
+bm25_retriever = load_bm25_store()
 
 # Đọc API Key mặc định từ hệ thống hoặc .env
 env_vars = load_env_vars(os.path.join(ROOT_DIR, "src", ".env"))
@@ -229,7 +234,19 @@ if query:
                 if "là gì" in search_query or "thế nào là" in search_query:
                     search_query += " đại cương định nghĩa khái niệm"
                 
-                retrieved_docs = vector_db.similarity_search(search_query, k=5)
+                vector_docs = vector_db.similarity_search(search_query, k=5)
+                
+                bm25_docs = []
+                if bm25_retriever:
+                    bm25_retriever.k = 5
+                    if entity_words:
+                        bm25_query = " ".join(entity_words)
+                        bm25_docs = bm25_retriever.invoke(bm25_query)
+                    else:
+                        bm25_docs = bm25_retriever.invoke(search_query)
+
+                retrieved_docs = reciprocal_rank_fusion(vector_docs, bm25_docs, top_n=5)
+                
                 for doc in retrieved_docs:
                     retrieved_docs_serializable.append({
                         "source": doc.metadata.get("source", "Tài liệu y tế"),

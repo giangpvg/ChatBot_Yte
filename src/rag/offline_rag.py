@@ -7,6 +7,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 # pyrefly: ignore [missing-import]
 from langchain_chroma import Chroma
 import warnings
+import pickle
+from langchain_community.retrievers import BM25Retriever
+from tokenizer import vi_tokenizer
 
 warnings.filterwarnings('ignore')
 
@@ -95,7 +98,17 @@ def build_vector_db():
     chunks = text_splitter.split_documents(docs)
     print(f"   => Tổng số chunks tạo ra: {len(chunks)}")
     
-    print("\nBƯỚC 3: Tải Embedding Model (keepitreal/vietnamese-sbert)...")
+    print("\nBƯỚC 3: Tạo chỉ mục Keyword Search (BM25)...")
+    
+    bm25_retriever = BM25Retriever.from_documents(chunks, preprocess_func=vi_tokenizer)
+    
+    os.makedirs(persist_dir, exist_ok=True)
+    bm25_path = os.path.join(persist_dir, "bm25_retriever.pkl")
+    with open(bm25_path, 'wb') as f:
+        pickle.dump(bm25_retriever, f)
+    print(f"   => Đã lưu BM25 Index tại: {bm25_path}")
+
+    print("\nBƯỚC 4: Tải Embedding Model (keepitreal/vietnamese-sbert)...")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"   => Đang sử dụng thiết bị: {device.upper()}")
     
@@ -104,7 +117,7 @@ def build_vector_db():
         model_kwargs={'device': device}
     )
     
-    print("\nBƯỚC 4: Tính toán Vector và lưu vào ChromaDB (Có thể mất vài phút)...")
+    print("\nBƯỚC 5: Tính toán Vector và lưu vào ChromaDB (Có thể mất vài phút)...")
     vector_db = Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,

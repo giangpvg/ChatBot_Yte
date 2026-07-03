@@ -13,3 +13,5 @@ openai
 python-dotenv
 streamlit
 underthesea
+torchvision
+rank_bm25
