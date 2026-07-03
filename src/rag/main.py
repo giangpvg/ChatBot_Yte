@@ -162,7 +162,10 @@ def generate_answer(openai_client, hf_client, prompt):
             
     if hf_client:
         try:
-            messages = [{"role": "user", "content": prompt}]
+            messages = [
+                {"role": "system", "content": "Bạn là Trợ lý Y tế AI chuyên nghiệp. Bạn BẮT BUỘC CHỈ ĐƯỢC PHÉP TRẢ LỜI BẰNG TIẾNG VIỆT, tuyệt đối không sử dụng tiếng Trung hay ngôn ngữ nào khác."},
+                {"role": "user", "content": prompt}
+            ]
             response = hf_client.chat_completion(
                 model="Qwen/Qwen2.5-7B-Instruct",
                 messages=messages,
