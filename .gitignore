@@ -1,27 +1,34 @@
-# Python cache
+# Python cache & build
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
 
 # Environment variables & credentials
 .env
-src/.env
+*.env.local
 
-# Large model checkpoints
-src/checkpoints/
+# Runtime artifacts (checkpoints, vector DB) - see medical_chatbot/config.py
+storage/
 *.pth
+*.pkl
+*.sqlite3
 
-# Local databases
-src/rag/chroma_db/
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
 
-# Streamlit config & cache
-.streamlit/
+# IDE
+.vscode/
+.idea/
 
 # OS files
 .DS_Store
 Thumbs.db
-
-# Test files
-src/rag/test_markdown_conversion.py
